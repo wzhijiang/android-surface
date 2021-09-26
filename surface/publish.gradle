@@ -1,4 +1,10 @@
 // https://medium.com/geekculture/publish-an-android-library-to-github-packages-3c454f6c5d48
+//
+// To use this library, the user could add the repository:
+//
+//   maven {
+//       url "https://maven.pkg.github.com/wzhijiang"
+//   }
 
 apply plugin: "maven-publish"
 
