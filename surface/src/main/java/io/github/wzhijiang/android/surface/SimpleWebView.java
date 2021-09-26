@@ -1,4 +1,4 @@
-package io.github.wzhijiang.android.surfacetest;
+package io.github.wzhijiang.android.surface;
 
 import android.app.Activity;
 import android.content.Context;
@@ -12,23 +12,23 @@ import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public class CustomWebView extends WebView {
+public class SimpleWebView extends WebView {
 
     private Surface mSurface;
 
-    public CustomWebView(@NonNull Context context) {
+    public SimpleWebView(@NonNull Context context) {
         super(context);
     }
 
-    public CustomWebView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public SimpleWebView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public CustomWebView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public SimpleWebView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
-    public CustomWebView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public SimpleWebView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
@@ -77,8 +77,8 @@ public class CustomWebView extends WebView {
         settings.setSupportZoom(true);
     }
 
-    public static CustomWebView createWebView(Activity activity, String url) {
-        CustomWebView webView = new CustomWebView(activity);
+    public static SimpleWebView createWebView(Activity activity, String url) {
+        SimpleWebView webView = new SimpleWebView(activity);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);

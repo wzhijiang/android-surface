@@ -18,11 +18,12 @@ import javax.microedition.khronos.opengles.GL10;
 
 import io.github.wzhijiang.android.surface.ExternalTexture;
 import io.github.wzhijiang.android.surface.QuadRenderer;
+import io.github.wzhijiang.android.surface.SimpleWebView;
 import io.github.wzhijiang.android.surface.TextureHandle;
 
 public class MainActivity extends AppCompatActivity {
 
-    private CustomWebView mWebView;
+    private SimpleWebView mWebView;
     private GLSurfaceView mSurfaceView;
     private Handler mHandler;
     private ExternalTexture mExternalTexture;
@@ -39,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(mSurfaceView);
 
-        mWebView = CustomWebView.createWebView(this, "https://www.google.com/");
+        mWebView = SimpleWebView.createWebView(this, "https://www.google.com/");
         mHandler = new Handler(Looper.getMainLooper());
     }
 
