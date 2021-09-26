@@ -1,2 +1,3 @@
+include ':surface'
 include ':app'
 rootProject.name = "AndroidSurface"
