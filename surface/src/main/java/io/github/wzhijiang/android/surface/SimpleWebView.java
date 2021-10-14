@@ -5,9 +5,12 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.Surface;
+import android.view.ViewGroup;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,6 +18,7 @@ import androidx.annotation.Nullable;
 public class SimpleWebView extends WebView {
 
     private Surface mSurface;
+    private FrameLayout mWebLayout;
 
     public SimpleWebView(@NonNull Context context) {
         super(context);
@@ -32,21 +36,32 @@ public class SimpleWebView extends WebView {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
+    private void setWebLayout(FrameLayout layout) {
+        mWebLayout = layout;
+    }
+
+    public FrameLayout getWebLayout() {
+        return mWebLayout;
+    }
+
     public void setSurface(Surface surface) {
         mSurface = surface;
     }
 
-    public void drawSurface() {
+    @Override
+    public void draw(Canvas canvas) {
         if (mSurface == null) {
+            super.draw(canvas);
             return;
         }
 
         Canvas glAttachedCanvas = mSurface.lockCanvas(null);
-        if (glAttachedCanvas == null) {
+        if (glAttachedCanvas != null) {
+            super.draw(glAttachedCanvas);
+        } else {
+            super.draw(canvas);
             return;
         }
-
-        draw(glAttachedCanvas);
 
         mSurface.unlockCanvasAndPost(glAttachedCanvas);
     }
@@ -77,15 +92,26 @@ public class SimpleWebView extends WebView {
         settings.setSupportZoom(true);
     }
 
-    public static SimpleWebView createWebView(Activity activity, String url) {
-        SimpleWebView webView = new SimpleWebView(activity);
+    public static SimpleWebView create(Context context) {
+        LayoutInflater inflater = LayoutInflater.from(context);
+        FrameLayout layout = (FrameLayout)inflater.inflate(R.layout.web_layout, null, false);
 
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        webView.layout(0, 0, displayMetrics.widthPixels, displayMetrics.heightPixels);
-
+        SimpleWebView webView = layout.findViewById(R.id.web_view);
+        webView.setWebLayout(layout);
         webView.initSettings();
-        webView.loadUrl(url);
+
+        return webView;
+    }
+
+    public static SimpleWebView create(Context context, ViewGroup parent, int width, int height, int zorder) {
+        SimpleWebView webView = create(context);
+        parent.addView(webView.getWebLayout(), zorder);
+
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) webView.getWebLayout().getLayoutParams();
+        params.height = height;
+        params.width = width;
+        webView.getWebLayout().setLayoutParams(params);
+
         return webView;
     }
 }

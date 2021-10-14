@@ -2,16 +2,20 @@ package io.github.wzhijiang.android.surfacetest;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.Window;
+import android.widget.FrameLayout;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -34,34 +38,23 @@ public class MainActivity extends AppCompatActivity {
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        mSurfaceView = new GLSurfaceView(this);
+        setContentView(R.layout.activity_main);
+
+        mSurfaceView = (GLSurfaceView)findViewById(R.id.surface_view);
         mSurfaceView.setEGLContextClientVersion(2);
         mSurfaceView.setRenderer(mRenderer);
 
-        setContentView(mSurfaceView);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        this.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
-        mWebView = SimpleWebView.createWebView(this, "https://www.google.com/");
+        FrameLayout rootLayout = findViewById(R.id.root_layout);
+        mWebView = SimpleWebView.create(this, rootLayout, displayMetrics.widthPixels,
+                displayMetrics.heightPixels, 0);
         mHandler = new Handler(Looper.getMainLooper());
-    }
-
-    private void drawSurface() {
-        final Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                Log.d("MainActivity", "drawSurface");
-                mWebView.drawSurface();
-                mHandler.postDelayed(this, 100);
-            }
-        };
-
-        mHandler.postDelayed(runnable, 100);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mWebView != null) {
-            mWebView.onTouchEvent(event);
-        }
         return super.onTouchEvent(event);
     }
 
@@ -107,20 +100,23 @@ public class MainActivity extends AppCompatActivity {
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             mQuadRenderer = new QuadRenderer();
             mQuadRenderer.initGL();
-
-            mHandler.postDelayed(() -> {
-                drawSurface();
-            }, 1000);
         }
 
         @Override
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             GLES20.glViewport(0, 0, width, height);
 
+            if (mSurface != null) {
+                return;
+            }
+
             mExternalTexture = new ExternalTexture(mHandler, width, height);
             mSurface = new Surface(mExternalTexture.getSurfaceTexture());
 
             mWebView.setSurface(mSurface);
+            mHandler.post(() -> {
+                mWebView.loadUrl("https://www.google.com/");
+            });
         }
 
         @Override
