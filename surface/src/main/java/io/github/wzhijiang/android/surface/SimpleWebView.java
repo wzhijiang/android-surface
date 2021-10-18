@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 public class SimpleWebView extends WebView {
 
     private static final boolean DEBUG = true;
+    private static final boolean DEBUG_DRAW = false;
 
     private Surface mSurface;
     private FrameLayout mWebLayout;
@@ -56,6 +57,8 @@ public class SimpleWebView extends WebView {
         initSettings();
 
         setWebViewClient(mWebViewClient);
+
+        Log.i(BuildConfig.LOG_TAG, "webview inited");
     }
 
     private void initSettings() {
@@ -97,6 +100,10 @@ public class SimpleWebView extends WebView {
 
         Canvas glAttachedCanvas = mSurface.lockCanvas(null);
         if (glAttachedCanvas != null) {
+            if (DEBUG_DRAW) {
+                Log.v(BuildConfig.LOG_TAG, "webview draw");
+            }
+
             super.draw(glAttachedCanvas);
         } else {
             super.draw(canvas);
@@ -104,6 +111,11 @@ public class SimpleWebView extends WebView {
         }
 
         mSurface.unlockCanvasAndPost(glAttachedCanvas);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        return false;
     }
 
     public boolean dispatchTouchEvent(int x, int y, int action) {
