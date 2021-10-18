@@ -23,6 +23,8 @@ android {
                 abiFilters "arm64-v8a", "armeabi-v7a", "x86"
             }
         }
+
+        buildConfigField "String", "LOG_TAG", "\"IGW-SURFACE\""
     }
 
     buildTypes {

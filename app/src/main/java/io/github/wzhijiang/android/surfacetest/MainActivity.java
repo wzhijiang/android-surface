@@ -2,8 +2,6 @@ package io.github.wzhijiang.android.surfacetest;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -54,8 +52,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return super.onTouchEvent(event);
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (mWebView != null) {
+            return mWebView.dispatchTouchEvent((int) ev.getX(), (int) ev.getY(), ev.getAction());
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -102,19 +103,22 @@ public class MainActivity extends AppCompatActivity {
             mQuadRenderer.initGL();
         }
 
+        /**
+         * Note that `onSurfaceChanged` will be called twice when the app launches.
+         */
         @Override
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             GLES20.glViewport(0, 0, width, height);
+            Log.d(BuildConfig.LOG_TAG, "Surface changed: " + width + ", " + height);
 
-            if (mSurface != null) {
-                return;
-            }
+            Release();
 
             mExternalTexture = new ExternalTexture(mHandler, width, height);
             mSurface = new Surface(mExternalTexture.getSurfaceTexture());
 
-            mWebView.setSurface(mSurface);
             mHandler.post(() -> {
+                mWebView.setSurface(mSurface);
+                mWebView.resize(width, height);
                 mWebView.loadUrl("https://www.google.com/");
             });
         }
@@ -129,6 +133,20 @@ public class MainActivity extends AppCompatActivity {
 
             if (mTextureHandle != null) {
                 mQuadRenderer.draw(mTextureHandle);
+            }
+        }
+
+        void Release() {
+            if (mWebView != null) {
+                mWebView.setSurface(null);
+            }
+
+            if (mSurface != null) {
+                mSurface.release();
+            }
+
+            if (mExternalTexture != null) {
+                mExternalTexture.release();
             }
         }
     };

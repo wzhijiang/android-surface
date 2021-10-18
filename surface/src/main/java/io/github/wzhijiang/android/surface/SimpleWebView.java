@@ -1,15 +1,18 @@
 package io.github.wzhijiang.android.surface;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -17,8 +20,11 @@ import androidx.annotation.Nullable;
 
 public class SimpleWebView extends WebView {
 
+    private static final boolean DEBUG = true;
+
     private Surface mSurface;
     private FrameLayout mWebLayout;
+    private MotionEventWrapper mEventWrapper;
 
     public SimpleWebView(@NonNull Context context) {
         super(context);
@@ -44,29 +50,15 @@ public class SimpleWebView extends WebView {
         return mWebLayout;
     }
 
-    public void setSurface(Surface surface) {
-        mSurface = surface;
+    public void init() {
+        mEventWrapper = new MotionEventWrapper();
+
+        initSettings();
+
+        setWebViewClient(mWebViewClient);
     }
 
-    @Override
-    public void draw(Canvas canvas) {
-        if (mSurface == null) {
-            super.draw(canvas);
-            return;
-        }
-
-        Canvas glAttachedCanvas = mSurface.lockCanvas(null);
-        if (glAttachedCanvas != null) {
-            super.draw(glAttachedCanvas);
-        } else {
-            super.draw(canvas);
-            return;
-        }
-
-        mSurface.unlockCanvasAndPost(glAttachedCanvas);
-    }
-
-    public void initSettings() {
+    private void initSettings() {
         WebSettings settings = this.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -92,19 +84,71 @@ public class SimpleWebView extends WebView {
         settings.setSupportZoom(true);
     }
 
-    public static SimpleWebView create(Context context) {
+    public void setSurface(Surface surface) {
+        mSurface = surface;
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        if (mSurface == null) {
+            super.draw(canvas);
+            return;
+        }
+
+        Canvas glAttachedCanvas = mSurface.lockCanvas(null);
+        if (glAttachedCanvas != null) {
+            super.draw(glAttachedCanvas);
+        } else {
+            super.draw(canvas);
+            return;
+        }
+
+        mSurface.unlockCanvasAndPost(glAttachedCanvas);
+    }
+
+    public boolean dispatchTouchEvent(int x, int y, int action) {
+        MotionEvent ev = mEventWrapper.genTouchEvent(x, y, action);
+
+        if (DEBUG) {
+            Log.d(BuildConfig.LOG_TAG, "touched: " + ev.toString());
+        }
+
+        return super.dispatchTouchEvent(ev);
+    }
+
+    public void resize(int width, int height) {
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mWebLayout.getLayoutParams();
+        params.height = height;
+        params.width = width;
+        mWebLayout.setLayoutParams(params);
+    }
+
+    public WebViewClient mWebViewClient = new WebViewClient() {
+
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            final String urlString = request.getUrl().toString();
+            if (urlString == null || urlString.startsWith("http://") || urlString.startsWith("https://")) {
+                return false;
+            }
+
+            return true;
+        }
+    };
+
+    public static SimpleWebView create(Context context, int width, int height) {
         LayoutInflater inflater = LayoutInflater.from(context);
         FrameLayout layout = (FrameLayout)inflater.inflate(R.layout.web_layout, null, false);
 
         SimpleWebView webView = layout.findViewById(R.id.web_view);
         webView.setWebLayout(layout);
-        webView.initSettings();
+        webView.init();
 
         return webView;
     }
 
     public static SimpleWebView create(Context context, ViewGroup parent, int width, int height, int zorder) {
-        SimpleWebView webView = create(context);
+        SimpleWebView webView = create(context, width, height);
         parent.addView(webView.getWebLayout(), zorder);
 
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) webView.getWebLayout().getLayoutParams();
