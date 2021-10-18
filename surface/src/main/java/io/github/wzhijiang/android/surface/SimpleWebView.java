@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.Surface;
+import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -53,6 +54,8 @@ public class SimpleWebView extends WebView {
 
     public void init() {
         mEventWrapper = new MotionEventWrapper();
+
+        setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         initSettings();
 
@@ -101,8 +104,11 @@ public class SimpleWebView extends WebView {
         Canvas glAttachedCanvas = mSurface.lockCanvas(null);
         if (glAttachedCanvas != null) {
             if (DEBUG_DRAW) {
-                Log.v(BuildConfig.LOG_TAG, "webview draw");
+                Log.v(BuildConfig.LOG_TAG, "webview draw" );
             }
+
+            glAttachedCanvas.scale(getScaleX(), getScaleY());
+            glAttachedCanvas.translate(-getScrollX(), -getScrollY());
 
             super.draw(glAttachedCanvas);
         } else {
