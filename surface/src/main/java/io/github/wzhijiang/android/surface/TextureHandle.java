@@ -10,6 +10,19 @@ public class TextureHandle {
         mMemoryOwn = true;
     }
 
+    public TextureHandle(int textureId)
+    {
+        float[] stMatrix = {
+                1.0f,  0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f,  0.0f, 1.0f, 0.0f,
+                0.0f,  1.0f, 0.0f, 1.0f
+        };
+
+        mHandle = nativeCreateTextureHandle(textureId, stMatrix);
+        mMemoryOwn = true;
+    }
+
     @SuppressWarnings("deprecation")
     protected void finalize() {
         delete();
