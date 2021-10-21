@@ -23,6 +23,18 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
     private int mWidth;
     private int mHeight;
 
+    /**
+     * Construct a new ExternalTexture to stream images to a given OpenGL texture.
+     *
+     * @param handler The handler on which the listener should be invoked, or null
+     * to use an arbitrary thread.
+     *
+     * In Android Q (Android 10), the handler should better be created in the GLThread in which
+     * `Looper.myLooper()` should not be null.
+     *
+     * @param width
+     * @param height
+     */
     public ExternalTexture(Handler handler, int width, int height) {
         mWidth = width;
         mHeight = height;

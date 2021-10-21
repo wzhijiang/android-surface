@@ -101,7 +101,7 @@ public class SimpleWebView extends WebView {
             return;
         }
 
-        Canvas glAttachedCanvas = mSurface.lockCanvas(null);
+        Canvas glAttachedCanvas = mSurface.lockHardwareCanvas();
         if (glAttachedCanvas != null) {
             if (DEBUG_DRAW) {
                 Log.v(BuildConfig.LOG_TAG, "webview draw" );
@@ -125,6 +125,11 @@ public class SimpleWebView extends WebView {
     }
 
     public boolean dispatchTouchEvent(int x, int y, int action) {
+        if (action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_DOWN
+                && action != MotionEvent.ACTION_MOVE) {
+            return false;
+        }
+
         MotionEvent ev = mEventWrapper.genTouchEvent(x, y, action);
 
         if (DEBUG) {

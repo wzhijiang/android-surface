@@ -111,15 +111,25 @@ public class MainActivity extends AppCompatActivity {
             GLES20.glViewport(0, 0, width, height);
             Log.d(BuildConfig.LOG_TAG, "Surface changed: " + width + ", " + height);
 
-            Release();
+            release();
 
-            mExternalTexture = new ExternalTexture(mHandler, width, height);
+            // This is just a guess!
+            //
+            // In Android Q (Android 10), the setFrameAvailableHandler should better be created in
+            // the GLThread in which `Looper.myLooper()` should not be null.
+            //
+            // However, in the GLThread attached to GLSurfaceView, `Looper.myLooper()` is null.
+            //
+            // TODO: Find an appropriate handler for ExternalTexture.
+            Handler setFrameAvailableHandler = mHandler;
+
+            mExternalTexture = new ExternalTexture(setFrameAvailableHandler, width, height);
             mSurface = new Surface(mExternalTexture.getSurfaceTexture());
 
             mHandler.post(() -> {
                 mWebView.setSurface(mSurface);
                 mWebView.resize(width, height);
-                mWebView.loadUrl("https://www.google.com/");
+                mWebView.loadUrl("https://www.bilibili.com/");
             });
         }
 
@@ -136,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        void Release() {
+        void release() {
             if (mWebView != null) {
                 mWebView.setSurface(null);
             }
