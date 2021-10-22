@@ -36,16 +36,6 @@ afterEvaluate {
                 artifactId 'android-surface'
                 version android.defaultConfig.versionName
             }
-            debug(MavenPublication) {
-                from components.debug
-
-                // Replace with your own group ID.
-                groupId 'io.github.wzhijiang'
-
-                // Replace with the name of your library
-                artifactId 'android-surface'
-                version android.defaultConfig.versionName
-            }
         }
     }
 }
