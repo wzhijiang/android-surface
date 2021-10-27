@@ -113,14 +113,6 @@ public class MainActivity extends AppCompatActivity {
 
             release();
 
-            // This is just a guess!
-            //
-            // In Android Q (Android 10), the setFrameAvailableHandler should better be created in
-            // the GLThread in which `Looper.myLooper()` should not be null.
-            //
-            // However, in the GLThread attached to GLSurfaceView, `Looper.myLooper()` is null.
-            //
-            // TODO: Find an appropriate handler for ExternalTexture.
             Handler setFrameAvailableHandler = mHandler;
 
             mExternalTexture = new ExternalTexture(setFrameAvailableHandler, width, height);

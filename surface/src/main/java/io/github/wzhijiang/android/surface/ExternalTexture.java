@@ -12,7 +12,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
     private static final String TAG = ExternalTexture.class.getSimpleName();
 
     private SurfaceTexture mSurfaceTexture;
-    private boolean mSurfaceNeedsUpdate = false;
+    private int mSurfaceNeedsUpdate = 0;
     private boolean mHasFirstFrame = false;
 
     private final float[] mSTMatrix = new float[16];
@@ -109,11 +109,11 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
     }
 
     public synchronized boolean updateTexture() {
-        if (mSurfaceNeedsUpdate) {
+        if (mSurfaceNeedsUpdate > 0) {
             mSurfaceTexture.updateTexImage();
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
             mTimestampNs = mSurfaceTexture.getTimestamp();
-            mSurfaceNeedsUpdate = false;
+            mSurfaceNeedsUpdate--;
             return true;
         }
         return false;
@@ -121,7 +121,9 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        mSurfaceNeedsUpdate = true;
+        synchronized (this) {
+            mSurfaceNeedsUpdate++;
+        }
         mHasFirstFrame = true;
     }
 }
