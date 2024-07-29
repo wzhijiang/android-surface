@@ -12,14 +12,16 @@ namespace igw {
 
 class TextureHandle {
 public:
-    TextureHandle(JNIEnv *j_env, jint j_texture_id, jfloatArray j_st_matrix);
+    TextureHandle(JNIEnv *j_env, jint j_texture_id, jfloatArray j_st_matrix, jboolean j_is_OES_texture);
 
     GLuint GetTextureId();
     GLfloat *GetSTMatrix();
+    bool IsOESTexture();
 
 private:
     GLuint texture_id_;
     float st_matrix_[16];
+    bool is_OES_texture_;
 };
 
 }

@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
 
             Handler setFrameAvailableHandler = mHandler;
 
-            mExternalTexture = new ExternalTexture(setFrameAvailableHandler, width, height);
+            mExternalTexture = new ExternalTexture(setFrameAvailableHandler, width, height, false);
             mSurface = new Surface(mExternalTexture.getSurfaceTexture());
 
             mHandler.post(() -> {

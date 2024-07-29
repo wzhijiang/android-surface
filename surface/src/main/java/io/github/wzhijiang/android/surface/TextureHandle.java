@@ -5,21 +5,24 @@ public class TextureHandle {
     private long mHandle;
     private boolean mMemoryOwn;
 
-    public TextureHandle(int textureId, float[] stMatrix) {
-        mHandle = nativeCreateTextureHandle(textureId, stMatrix);
+    private static final float[] ST_MATRIX_DEFAULT = {
+            1.0f,  0.0f, 0.0f, 0.0f,
+            0.0f, -1.0f, 0.0f, 0.0f,
+            0.0f,  0.0f, 1.0f, 0.0f,
+            0.0f,  1.0f, 0.0f, 1.0f
+    };
+
+    public TextureHandle(int textureId, float[] stMatrix, boolean isOESTexture) {
+        mHandle = nativeCreateTextureHandle(textureId, stMatrix, isOESTexture);
         mMemoryOwn = true;
     }
 
-    public TextureHandle(int textureId) {
-        float[] stMatrix = {
-                1.0f,  0.0f, 0.0f, 0.0f,
-                0.0f, -1.0f, 0.0f, 0.0f,
-                0.0f,  0.0f, 1.0f, 0.0f,
-                0.0f,  1.0f, 0.0f, 1.0f
-        };
+    public TextureHandle(int textureId, float[] stMatrix) {
+        this(textureId, stMatrix, true);
+    }
 
-        mHandle = nativeCreateTextureHandle(textureId, stMatrix);
-        mMemoryOwn = true;
+    public TextureHandle(int textureId) {
+        this(textureId, ST_MATRIX_DEFAULT, true);
     }
 
     @SuppressWarnings("deprecation")
@@ -41,7 +44,7 @@ public class TextureHandle {
         return mHandle;
     }
 
-    public native long nativeCreateTextureHandle(int textureId, float[] stMatrix);
+    public native long nativeCreateTextureHandle(int textureId, float[] stMatrix, boolean isOESTexture);
     public native void nativeDeleteTextureHandle(long handle);
 
     static {

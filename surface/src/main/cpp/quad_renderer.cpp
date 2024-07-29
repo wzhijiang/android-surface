@@ -75,7 +75,10 @@ namespace igw {
         glVertexAttribPointer(texcoord_param_, 4, GL_FLOAT, GL_FALSE, 0, kTexcoords);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture_handle->GetTextureId());
+        if (texture_handle->IsOESTexture())
+            glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture_handle->GetTextureId());
+        else
+            glBindTexture(GL_TEXTURE_2D, texture_handle->GetTextureId());
         glUniform1i(texture_param_, 0);
         CheckGLError(LOG_TAG, "bind texture");
 
@@ -85,7 +88,10 @@ namespace igw {
         glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_SHORT, kIndices);
         CheckGLError(LOG_TAG, "draw elements");
 
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
+        if (texture_handle->IsOESTexture())
+            glBindTexture(GL_TEXTURE_EXTERNAL_OES, 0);
+        else
+            glBindTexture(GL_TEXTURE_2D, 0);
         glDisableVertexAttribArray(position_param_);
         glDisableVertexAttribArray(texcoord_param_);
     }

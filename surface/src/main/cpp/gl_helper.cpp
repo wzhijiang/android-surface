@@ -11,35 +11,35 @@ namespace igw {
 
     GLuint LoadShader(const GLenum shaderType, const char *shaderSource) {
         int shader = glCreateShader(shaderType);
-        if (shader != 0) {
-            // Pass in the shader source.
-            glShaderSource(shader, 1, &shaderSource, NULL);
+            if (shader != 0) {
+                // Pass in the shader source.
+                glShaderSource(shader, 1, &shaderSource, NULL);
 
-            // Compile the shader.
-            glCompileShader(shader);
+                // Compile the shader.
+                glCompileShader(shader);
 
-            // Get the compilation status.
-            int compileStatus = GL_TRUE;
-            glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
+                // Get the compilation status.
+                int compileStatus = GL_TRUE;
+                glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
 
-            // If the compilation failed, delete the shader.
-            if (compileStatus == GL_FALSE) {
-                GLint maxLength = 0;
-                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+                // If the compilation failed, delete the shader.
+                if (compileStatus == GL_FALSE) {
+                    GLint maxLength = 0;
+                    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
 
-                LOGE(TAG, "status is %d", compileStatus);
-                GLchar *msg = new GLchar [maxLength];
-                glGetShaderInfoLog(shader, maxLength, &maxLength, msg);
+                    LOGE(TAG, "status is %d", compileStatus);
+                    GLchar *msg = new GLchar [maxLength];
+                    glGetShaderInfoLog(shader, maxLength, &maxLength, msg);
 
-                LOGE(TAG, "Error compiling shader: %d: %s", shaderType, msg);
+                    LOGE(TAG, "Error compiling shader: %d: %s", shaderType, msg);
 
-                delete[] msg;
-                glDeleteShader(shader);
-                shader = 0;
+                    delete[] msg;
+                    glDeleteShader(shader);
+                    shader = 0;
+                }
             }
+            return shader;
         }
-        return shader;
-    }
 
     GLuint CreateProgram(const char *vertexSource, const char *fragmentSource) {
         GLuint vertexShader = LoadShader(GL_VERTEX_SHADER, vertexSource);

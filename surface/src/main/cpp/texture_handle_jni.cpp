@@ -10,8 +10,8 @@ using namespace igw;
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_io_github_wzhijiang_android_surface_TextureHandle_nativeCreateTextureHandle(JNIEnv *env, jobject j_obj,
-        jint texture_id, jfloatArray j_st_matrix) {
-    TextureHandle *obj = new TextureHandle(env, texture_id, j_st_matrix);
+        jint texture_id, jfloatArray j_st_matrix, jboolean j_is_OES_texture) {
+    TextureHandle *obj = new TextureHandle(env, texture_id, j_st_matrix, j_is_OES_texture);
     return (jlong)obj;
 }
 
