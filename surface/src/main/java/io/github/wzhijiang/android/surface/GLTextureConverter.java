@@ -50,6 +50,7 @@ public class GLTextureConverter {
     private int muSTMatrixHandle;
     private int mPositionHandle;
     private int mTextureCoordHandle;
+    private int mTextureHandle;
 
     public GLTextureConverter() {
         mTextureIds = new int[] { 0 };
@@ -57,6 +58,7 @@ public class GLTextureConverter {
 
         mVerticesBuffer = ByteBuffer.allocateDirect(VERTICES.length * FLOAT_SIZE_BYTES)
                         .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mVerticesBuffer.put(VERTICES).position(0);
 
         init();
     }
@@ -71,19 +73,25 @@ public class GLTextureConverter {
         muSTMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uSTMatrix");
         GLHelper.checkGlError(TAG, "glGetUniformLocation uSTMatrix");
         if (muSTMatrixHandle == -1) {
-            throw new RuntimeException("Could not get attrib location for uSTMatrix");
+//            throw new RuntimeException("Could not get uniform location for uSTMatrix");
         }
 
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition");
         GLHelper.checkGlError(TAG, "glGetAttribLocation aPosition");
         if (mPositionHandle == -1) {
-            throw new RuntimeException("Could not get attrib location for aPosition");
+//            throw new RuntimeException("Could not get attrib location for aPosition");
         }
 
         mTextureCoordHandle = GLES20.glGetAttribLocation(mProgram, "aTextureCoord");
         GLHelper.checkGlError(TAG, "glGetAttribLocation aTextureCoord");
         if (mTextureCoordHandle == -1) {
-            throw new RuntimeException("Could not get attrib location for aTextureCoord");
+//            throw new RuntimeException("Could not get attrib location for aTextureCoord");
+        }
+
+        mTextureHandle = GLES20.glGetUniformLocation(mProgram, "sTexture");
+        GLHelper.checkGlError(TAG, "glGetAttribLocation sTexture");
+        if (mTextureHandle == -1) {
+//            throw new RuntimeException("Could not get uniform location for sTexture");
         }
     }
 
@@ -128,7 +136,7 @@ public class GLTextureConverter {
 
     private void draw(int textureId) {
         GLES20.glViewport(0, 0, mOutputWidth, mOutputHeight);
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         // Use the program
@@ -138,25 +146,27 @@ public class GLTextureConverter {
         // Set the texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
+        GLES20.glUniform1i(mTextureHandle, 0);
+        GLHelper.checkGlError(TAG, "glUniform1i mTextureHandle");
 
         // Set the texture uniform
         GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0);
-        GLHelper.checkGlError(TAG, "glUniformMatrix4fv");
+        GLHelper.checkGlError(TAG, "glUniformMatrix4fv muSTMatrixHandle");
 
         // Set the vertex attributes
+        GLES20.glEnableVertexAttribArray(mPositionHandle);
+        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mPositionHandle");
         mVerticesBuffer.position(VERTICES_POSITION_OFFSET);
         GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false,
                 VERTICES_STRIDE_BYTES, mVerticesBuffer);
         GLHelper.checkGlError(TAG, "glVertexAttribPointer aPosition");
-        GLES20.glEnableVertexAttribArray(mPositionHandle);
-        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray");
 
+        GLES20.glEnableVertexAttribArray(mTextureCoordHandle);
+        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mTextureCoordHandle");
         mVerticesBuffer.position(VERTICES_UV_OFFSET);
         GLES20.glVertexAttribPointer(mTextureCoordHandle, 2, GLES20.GL_FLOAT, false,
                 VERTICES_STRIDE_BYTES, mVerticesBuffer);
         GLHelper.checkGlError(TAG, "glVertexAttribPointer aTextureCoord");
-        GLES20.glEnableVertexAttribArray(mTextureCoordHandle);
-        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray");
 
         // Draw
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);

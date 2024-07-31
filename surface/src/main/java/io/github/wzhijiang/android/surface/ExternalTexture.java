@@ -16,8 +16,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
     private boolean mHasFirstFrame = false;
 
     private final float[] mSTMatrix = new float[16];
-    private int[] mOESTextureIds;
-    private int mTextureId;
+    private final int[] mOESTextureIds = new int[1];
     private long mTimestampNs = -1;
 
     private int mWidth;
@@ -43,10 +42,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
         mHeight = height;
         mOutputOESTexture = outputOESTexture;
 
-        mOESTextureIds = new int[1];
-        GLES20.glGenTextures(1, mOESTextureIds, 0);
-
-        createSurfaceTexture(mOESTextureIds[0], handler, mWidth, mHeight);
+        createSurfaceTexture(handler, mWidth, mHeight);
 
         if (!mOutputOESTexture) {
             mTextureConverter = new GLTextureConverter();
@@ -58,10 +54,10 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
         this(handler, width, height, true);
     }
 
-    private void createSurfaceTexture(int textureId, Handler handler, int width, int height) {
-        mTextureId = textureId;
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureId);
-        GLHelper.checkGlError(TAG, "glBindTexture: " + mTextureId);
+    private void createSurfaceTexture(Handler handler, int width, int height) {
+        GLES20.glGenTextures(1, mOESTextureIds, 0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTextureIds[0]);
+        GLHelper.checkGlError(TAG, "glBindTexture: " + mOESTextureIds[0]);
 
         GLES20.glTexParameterf(
                 GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
@@ -72,7 +68,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
         GLES20.glTexParameterf(
                 GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
-        mSurfaceTexture = new SurfaceTexture(mTextureId);
+        mSurfaceTexture = new SurfaceTexture(mOESTextureIds[0]);
         mSurfaceTexture.setDefaultBufferSize(width, height);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && handler != null) {
             mSurfaceTexture.setOnFrameAvailableListener(this, handler);
@@ -80,7 +76,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
             mSurfaceTexture.setOnFrameAvailableListener(this);
         }
 
-        Log.i(TAG, "Surface texture created: " + mTextureId);
+        Log.i(TAG, "Surface texture created: " + mOESTextureIds[0]);
     }
 
     public SurfaceTexture getSurfaceTexture() {
@@ -91,7 +87,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
         if (mTextureConverter != null) {
             return mTextureConverter.getTextureId();
         }
-        return mTextureId;
+        return mOESTextureIds[0];
     }
 
     public float[] getSTMatrix() {
@@ -103,7 +99,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
     }
 
     public synchronized TextureHandle getTextureHandle() {
-        return new TextureHandle(mTextureId, mSTMatrix);
+        return new TextureHandle(getTextureId(), mSTMatrix, mOutputOESTexture);
     }
 
     public synchronized boolean isPlaybackStarted() {
@@ -134,7 +130,9 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
             mTimestampNs = mSurfaceTexture.getTimestamp();
 
+            Log.d("ExternalTexture", "update texture: " + mOESTextureIds[0]);
             if (mTextureConverter != null) {
+                mTextureConverter.setSTMatrix(mSTMatrix);
                 mTextureConverter.drawToTexture(mOESTextureIds[0]);
             }
 
@@ -150,44 +148,5 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
             mSurfaceNeedsUpdate++;
         }
         mHasFirstFrame = true;
-    }
-
-    class FramebufferUtils {
-
-        public void createFramebuffer(int[] textures, int[] frameBuffers, int width, int height) {
-            GLES20.glGenTextures(1, textures, 0);
-            GLES20.glGenFramebuffers(1, frameBuffers, 0);
-
-            // Set up the texture
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-            GLHelper.checkGlError(TAG, "glBindTexture: " + textures[0]);
-            GLES20.glTexImage2D(
-                    GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA,
-                    GLES20.GL_UNSIGNED_BYTE, null);
-            GLHelper.checkGlError(TAG, "glTexImage2D");
-
-            GLES20.glTexParameterf(
-                    GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameterf(
-                    GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameterf(
-                    GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameterf(
-                    GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            
-            // Set up the framebuffer
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffers[0]);
-            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-                    GLES20.GL_TEXTURE_2D, textures[0], 0);
-            GLHelper.checkGlError(TAG, "glFramebufferTexture2D");
-
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-        }
-
-        public void releaseFramebuffer(int[] textures, int[] frameBuffers) {
-            GLES20.glDeleteTextures(1, textures, 0);
-            GLES20.glDeleteFramebuffers(1, frameBuffers, 0);
-        }
     }
 }

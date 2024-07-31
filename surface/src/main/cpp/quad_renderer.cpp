@@ -18,7 +18,13 @@ namespace igw {
                                        "  vTexcoord.x = 1.0 - vTexcoord.x;\n"
                                        "  gl_Position = vec4(aPosition.x, aPosition.y, aPosition.z, 1.0);\n"
                                        "}\n\0";
-    static const char *kFragmentShader = "#extension GL_OES_EGL_image_external: require\n"
+    static const char *kFragmentShader = "precision mediump float;\n"
+                                         "uniform sampler2D sTexture;\n"
+                                         "varying vec2 vTexcoord;\n"
+                                         "void main() {\n"
+                                         "   gl_FragColor = texture2D(sTexture, vTexcoord);\n"
+                                         "}\n\0";
+    static const char *kFragmentShaderOES = "#extension GL_OES_EGL_image_external: require\n"
                                          "precision mediump float;\n"
                                          "uniform samplerExternalOES sTexture;\n"
                                          "varying vec2 vTexcoord;\n"
