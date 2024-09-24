@@ -1,31 +1,49 @@
 package io.github.wzhijiang.android.surface;
 
+import android.content.Context;
+import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 public class GLTextureConverter {
 
     private static final String TAG = GLTextureConverter.class.getSimpleName();
 
     private static final int FLOAT_SIZE_BYTES = 4;
-    private static final String VERTEX_SHADER = "uniform mat4 uSTMatrix;\n"
-            + "attribute vec4 aPosition;\n"
-            + "attribute vec4 aTextureCoord;\n"
-            + "varying vec2 vTextureCoord;\n"
-            + "void main() {\n"
-            + "    gl_Position = aPosition;\n"
-            + "    vTextureCoord = (uSTMatrix * aTextureCoord).xy;\n"
-            + "}\n";
-    private static final String FRAGMENT_SHADER = "#extension GL_OES_EGL_image_external : require\n"
+//    private static final String VERTEX_SHADER = "uniform mat4 uSTMatrix;\n"
+//            + "attribute vec4 aPosition;\n"
+//            + "attribute vec4 aTextureCoord;\n"
+//            + "varying vec2 vTextureCoord;\n"
+//            + "void main() {\n"
+//            + "    gl_Position = aPosition;\n"
+//            + "    vTextureCoord = (uSTMatrix * aTextureCoord).xy;\n"
+//            + "}\n";
+//    private static final String FRAGMENT_SHADER = "#extension GL_OES_EGL_image_external : require\n"
+//            + "precision mediump float;\n"
+//            + "varying vec2 vTextureCoord;\n"
+//            + "uniform samplerExternalOES sTexture;\n"
+//            + "void main() {\n"
+//            + "    gl_FragColor = vec4(0.5, 0, 0, 1); //texture2D(sTexture, vTextureCoord);\n"
+//            + "}\n";
+    private static final String VERTEX_SHADER = "#version 320 es\n"
+        + "in vec4 aPosition;\n"
+        + "void main() {\n"
+        + "    gl_Position = aPosition;\n"
+        + "}\n";
+    private static final String FRAGMENT_SHADER = "#version 320 es\n"
             + "precision mediump float;\n"
-            + "varying vec2 vTextureCoord;\n"
-            + "uniform samplerExternalOES sTexture;\n"
+            + "out vec4 FragColor;\n"
             + "void main() {\n"
-            + "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n"
+            + "    FragColor = vec4(0.3, 0.5, 0.8, 1);\n"
             + "}\n";
 
     private static final int VERTICES_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
@@ -36,7 +54,7 @@ public class GLTextureConverter {
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
             -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            1.0f, 1.0f, 0.0f , 1.0f, 1.0f
+            1.0f, 0.5f, 0.0f , 1.0f, 1.0f
     };
 
     private int mOutputWidth;
@@ -79,7 +97,7 @@ public class GLTextureConverter {
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition");
         GLHelper.checkGlError(TAG, "glGetAttribLocation aPosition");
         if (mPositionHandle == -1) {
-//            throw new RuntimeException("Could not get attrib location for aPosition");
+            throw new RuntimeException("Could not get attrib location for aPosition");
         }
 
         mTextureCoordHandle = GLES20.glGetAttribLocation(mProgram, "aTextureCoord");
@@ -121,6 +139,9 @@ public class GLTextureConverter {
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFramebufferIds[0]);
         draw(textureId);
+
+        saveTexture(mTextureIds[0]);
+
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
         return mTextureIds[0];
@@ -136,7 +157,7 @@ public class GLTextureConverter {
 
     private void draw(int textureId) {
         GLES20.glViewport(0, 0, mOutputWidth, mOutputHeight);
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glClearColor(0.0f, 0.5f, 0.5f, 0.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         // Use the program
@@ -161,12 +182,12 @@ public class GLTextureConverter {
                 VERTICES_STRIDE_BYTES, mVerticesBuffer);
         GLHelper.checkGlError(TAG, "glVertexAttribPointer aPosition");
 
-        GLES20.glEnableVertexAttribArray(mTextureCoordHandle);
-        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mTextureCoordHandle");
-        mVerticesBuffer.position(VERTICES_UV_OFFSET);
-        GLES20.glVertexAttribPointer(mTextureCoordHandle, 2, GLES20.GL_FLOAT, false,
-                VERTICES_STRIDE_BYTES, mVerticesBuffer);
-        GLHelper.checkGlError(TAG, "glVertexAttribPointer aTextureCoord");
+//        GLES20.glEnableVertexAttribArray(mTextureCoordHandle);
+//        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mTextureCoordHandle");
+//        mVerticesBuffer.position(VERTICES_UV_OFFSET);
+//        GLES20.glVertexAttribPointer(mTextureCoordHandle, 2, GLES20.GL_FLOAT, false,
+//                VERTICES_STRIDE_BYTES, mVerticesBuffer);
+//        GLHelper.checkGlError(TAG, "glVertexAttribPointer aTextureCoord");
 
         // Draw
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -174,8 +195,10 @@ public class GLTextureConverter {
 
         // Clean up
         GLES20.glDisableVertexAttribArray(mPositionHandle);
-        GLES20.glDisableVertexAttribArray(mTextureCoordHandle);
+//        GLES20.glDisableVertexAttribArray(mTextureCoordHandle);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+
+        //GLES20.glReadPixels();
     }
 
     private void destroyFramebuffer() {
@@ -187,5 +210,60 @@ public class GLTextureConverter {
             GLES20.glDeleteTextures(1, mTextureIds, 0);
             mTextureIds[0] = 0;
         }
+    }
+
+    private int[] mTexturePixels = null;
+    private Context mContext;
+
+    public void setContext(Context c) {
+        mContext = c;
+    }
+
+    private void saveTexture(int textureId) {
+        int width = mOutputWidth;
+        int height = mOutputHeight;
+
+        if (mTexturePixels == null) {
+            mTexturePixels = new int[width * height];
+        }
+
+        // 假设textureId是你要保存的纹理ID，width和height是纹理的尺寸
+        //int[] pixels = new int[width * height];
+
+        // 读取像素数据（这里省略了FBO和渲染到纹理的步骤）
+        GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, IntBuffer.wrap(mTexturePixels));
+        GLHelper.checkGlError(TAG, "glReadPixels");
+
+//        for (int i = 0; i < mTexturePixels.length; i++) {
+//            int col = mTexturePixels[i];
+//            int r = (col & 0x000000FF) >> 0;
+//            int g = (col & 0x0000FF00) >> 8;
+//            int b = (col & 0x00FF0000) >> 16;
+//            int a = (col & 0xFF000000) >> 24;
+//            int newCol = 0;
+//        }
+
+        // 将像素数据转换为Bitmap
+        Bitmap bitmap = Bitmap.createBitmap(mTexturePixels, width, height, Bitmap.Config.ARGB_8888);
+
+        String path = "/sdcard/Android/data/com.DefaultCompany.androidsurfaceunitybulitin/files/webview2.png";
+        if (mContext != null) {
+            File externalFileDir = mContext.getExternalFilesDir(null);
+            if (externalFileDir != null) {
+                path = externalFileDir.getPath() + "/webview2.png";
+            }
+        }
+
+        // 保存Bitmap为PNG
+        try (FileOutputStream fos = new FileOutputStream(path)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // 清理资源
+        bitmap.recycle();
+
+        Log.d(TAG, "save texture to @2 " + path + ", " + mTexturePixels[(int)(width * 0.5 + height * 0.5)]);
     }
 }

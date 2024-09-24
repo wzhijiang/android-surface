@@ -1,5 +1,6 @@
 package io.github.wzhijiang.android.surface;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -26,11 +27,11 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
     private GLTextureConverter mTextureConverter;
 
     /**
+     *
      * Construct a new ExternalTexture to stream images to a given OpenGL texture.
      *
      * @param handler The handler on which the listener should be invoked, or null
      * to use an arbitrary thread.
-     *
      * In Android Q (Android 10), the handler should better be created in the GLThread in which
      * `Looper.myLooper()` should not be null.
      *
@@ -110,6 +111,12 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
         mHasFirstFrame = false;
     }
 
+    public void setContext(Context c) {
+        if (mTextureConverter != null) {
+            mTextureConverter.setContext(c);
+        }
+    }
+
     public void release() {
         if (mSurfaceTexture != null) {
             mSurfaceTexture.release();
@@ -130,7 +137,7 @@ public class ExternalTexture implements SurfaceTexture.OnFrameAvailableListener 
             mSurfaceTexture.getTransformMatrix(mSTMatrix);
             mTimestampNs = mSurfaceTexture.getTimestamp();
 
-            Log.d("ExternalTexture", "update texture: " + mOESTextureIds[0]);
+            Log.d("ExternalTexture", "update texture: " + mOESTextureIds[0] + ", " + mTextureConverter);
             if (mTextureConverter != null) {
                 mTextureConverter.setSTMatrix(mSTMatrix);
                 mTextureConverter.drawToTexture(mOESTextureIds[0]);

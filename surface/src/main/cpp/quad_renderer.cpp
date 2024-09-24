@@ -2,11 +2,11 @@
 // Created by 王志江 on 9/14/21.
 //
 
+
 #include <assert.h>
 #include "quad_renderer.h"
 
 #define LOG_TAG "nr_surface"
-
 namespace igw {
 
     static const char *kVertexShader = "uniform mat4 uSTMatrix;\n"

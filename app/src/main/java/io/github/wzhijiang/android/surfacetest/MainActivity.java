@@ -26,9 +26,9 @@ import io.github.wzhijiang.android.surface.TextureHandle;
 public class MainActivity extends AppCompatActivity {
 
     private SimpleWebView mWebView;
+    private ExternalTexture mExternalTexture;
     private GLSurfaceView mSurfaceView;
     private Handler mHandler;
-    private ExternalTexture mExternalTexture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,21 +39,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mSurfaceView = (GLSurfaceView)findViewById(R.id.surface_view);
-        mSurfaceView.setEGLContextClientVersion(2);
+        mSurfaceView.setEGLContextClientVersion(3);
         mSurfaceView.setRenderer(mRenderer);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         this.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
         FrameLayout rootLayout = findViewById(R.id.root_layout);
+        Log.d("MainActivity", "zorder " + rootLayout.getChildCount() + ", zorder of surfaceView ");
         mWebView = SimpleWebView.create(this, rootLayout, displayMetrics.widthPixels,
                 displayMetrics.heightPixels, 0);
         mHandler = new Handler(Looper.getMainLooper());
+
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         if (mWebView != null) {
+            Log.d("MainActivity", "MotionEvent " + ev);
             return mWebView.dispatchTouchEvent((int) ev.getX(), (int) ev.getY(), ev.getAction());
         }
         return super.dispatchTouchEvent(ev);
@@ -117,11 +120,12 @@ public class MainActivity extends AppCompatActivity {
 
             mExternalTexture = new ExternalTexture(setFrameAvailableHandler, width, height, false);
             mSurface = new Surface(mExternalTexture.getSurfaceTexture());
+            mExternalTexture.setContext(MainActivity.this);
 
             mHandler.post(() -> {
                 mWebView.setSurface(mSurface);
                 mWebView.resize(width, height);
-                mWebView.loadUrl("https://www.bilibili.com/");
+                mWebView.loadUrl("https://www.baidu.com/");
             });
         }
 
