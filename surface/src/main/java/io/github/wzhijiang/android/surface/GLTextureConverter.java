@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.util.Log;
 
 import java.io.File;
@@ -35,15 +36,19 @@ public class GLTextureConverter {
 //            + "    gl_FragColor = vec4(0.5, 0, 0, 1); //texture2D(sTexture, vTextureCoord);\n"
 //            + "}\n";
     private static final String VERTEX_SHADER = "#version 320 es\n"
-        + "in vec4 aPosition;\n"
+        + "layout (location = 0) in vec4 aPosition;\n"
+        + "out vec4 positionHCS;\n"
         + "void main() {\n"
-        + "    gl_Position = aPosition;\n"
+        + "    positionHCS = (vec4(aPosition.xyz, 1.0) + vec4(1.0,1.0,1.0,1.0)) * 0.5;\n"
+        + "    gl_Position = vec4(aPosition.xyz, 1.0);\n"
         + "}\n";
     private static final String FRAGMENT_SHADER = "#version 320 es\n"
             + "precision mediump float;\n"
+            + "in vec4 positionHCS;\n"
             + "out vec4 FragColor;\n"
             + "void main() {\n"
             + "    FragColor = vec4(0.3, 0.5, 0.8, 1);\n"
+//            + "    FragColor = vec4(positionHCS.x, positionHCS.y, positionHCS.z, 1);\n"
             + "}\n";
 
     private static final int VERTICES_STRIDE_BYTES = 5 * FLOAT_SIZE_BYTES;
@@ -54,7 +59,7 @@ public class GLTextureConverter {
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
             -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            1.0f, 0.5f, 0.0f , 1.0f, 1.0f
+            1.0f, 1.5f, 0.0f , 1.0f, 1.0f
     };
 
     private int mOutputWidth;
@@ -69,6 +74,8 @@ public class GLTextureConverter {
     private int mPositionHandle;
     private int mTextureCoordHandle;
     private int mTextureHandle;
+    private int mVBO;
+    private int mVAO;
 
     public GLTextureConverter() {
         mTextureIds = new int[] { 0 };
@@ -111,6 +118,33 @@ public class GLTextureConverter {
         if (mTextureHandle == -1) {
 //            throw new RuntimeException("Could not get uniform location for sTexture");
         }
+
+        int[] vao = new int[1];
+        GLES30.glGenVertexArrays(1, vao, 0);
+        GLES30.glBindVertexArray(vao[0]);
+
+        int[] vbo = new int[1];
+        IntBuffer vboBuffer = IntBuffer.wrap(vbo);
+        GLES20.glGenBuffers(1, vboBuffer);
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0]);
+
+        mVerticesBuffer.position(0);
+        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, VERTICES.length * FLOAT_SIZE_BYTES, mVerticesBuffer, GLES20.GL_STATIC_DRAW);
+        GLHelper.checkGlError(TAG, "glBufferData vertices");
+
+        GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false,
+                VERTICES_STRIDE_BYTES, 0);
+        GLHelper.checkGlError(TAG, "glVertexAttribPointer vertices");
+
+        GLES20.glEnableVertexAttribArray(mPositionHandle);
+
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+        GLES30.glBindVertexArray(0);
+
+        mVBO = vbo[0];
+        mVAO = vao[0];
+
+        Log.d(TAG, "init vbo = " + mVBO + ", vao = " + mVAO);
     }
 
     public void setOutputResolution(int width, int height) {
@@ -159,28 +193,33 @@ public class GLTextureConverter {
         GLES20.glViewport(0, 0, mOutputWidth, mOutputHeight);
         GLES20.glClearColor(0.0f, 0.5f, 0.5f, 0.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 
         // Use the program
         GLES20.glUseProgram(mProgram);
         GLHelper.checkGlError(TAG, "glUseProgram");
 
         // Set the texture
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
-        GLES20.glUniform1i(mTextureHandle, 0);
-        GLHelper.checkGlError(TAG, "glUniform1i mTextureHandle");
+//        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
+//        GLES20.glUniform1i(mTextureHandle, 0);
+//        GLHelper.checkGlError(TAG, "glUniform1i mTextureHandle");
 
         // Set the texture uniform
         GLES20.glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0);
         GLHelper.checkGlError(TAG, "glUniformMatrix4fv muSTMatrixHandle");
 
         // Set the vertex attributes
-        GLES20.glEnableVertexAttribArray(mPositionHandle);
-        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mPositionHandle");
-        mVerticesBuffer.position(VERTICES_POSITION_OFFSET);
-        GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false,
-                VERTICES_STRIDE_BYTES, mVerticesBuffer);
-        GLHelper.checkGlError(TAG, "glVertexAttribPointer aPosition");
+//        GLES20.glEnableVertexAttribArray(mPositionHandle);
+//        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mPositionHandle");
+//        mVerticesBuffer.position(VERTICES_POSITION_OFFSET);
+//        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, VERTICES.length * 4, mVerticesBuffer, GLES20.GL_STATIC_DRAW);
+//        GLHelper.checkGlError(TAG, "glBufferData");
+//        GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false,
+//                VERTICES_STRIDE_BYTES, mVerticesBuffer);
+//        GLHelper.checkGlError(TAG, "glVertexAttribPointer aPosition");
+
+        GLES30.glBindVertexArray(mVAO);
 
 //        GLES20.glEnableVertexAttribArray(mTextureCoordHandle);
 //        GLHelper.checkGlError(TAG, "glEnableVertexAttribArray mTextureCoordHandle");
@@ -190,13 +229,14 @@ public class GLTextureConverter {
 //        GLHelper.checkGlError(TAG, "glVertexAttribPointer aTextureCoord");
 
         // Draw
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
         GLHelper.checkGlError(TAG, "glDrawArrays");
 
         // Clean up
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
+//        GLES20.glDisableVertexAttribArray(mPositionHandle);
 //        GLES20.glDisableVertexAttribArray(mTextureCoordHandle);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        GLES30.glBindVertexArray(0);
 
         //GLES20.glReadPixels();
     }
@@ -264,6 +304,9 @@ public class GLTextureConverter {
         // 清理资源
         bitmap.recycle();
 
-        Log.d(TAG, "save texture to @2 " + path + ", " + mTexturePixels[(int)(width * 0.5 + height * 0.5)]);
+        String version = GLES20.glGetString(GLES20.GL_VERSION);
+
+        Log.d(TAG, "save texture to @2 " + path + ", " + mTexturePixels[(int)(width * 0.5 + height * 0.5)]
+            + ", version = " + version + ", mPositionHandle = " + mPositionHandle);
     }
 }
